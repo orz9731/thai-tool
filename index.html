@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>泰語拼音工具 v10 · @thai.notebook</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;700;900&family=Noto+Sans+TC:wght@400;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --mid:#2471A3;--mid-bg:#EAF3FB;--mid-bd:#A8D0E6;
+  --high:#C0392B;--high-bg:#FDECEA;--high-bd:#F0A89E;
+  --low:#1E8449;--low-bg:#EAF7EE;--low-bd:#A2D9B1;
+  --pur:#5B3A87;--pur-lt:#F3EDFF;--pur-bd:#D4C4EC;
+  --gold:#C8930A;--gold-bg:#FEF9E7;--gold-bd:#F9E4A0;
+  --ora:#D35400;--ora-bg:#FEF5E7;--ora-bd:#F0C080;
+  --teal:#0E7490;--teal-bg:#E0F7FA;--teal-bd:#80DEEA;
+  --rose:#BE185D;--rose-bg:#FFF0F5;--rose-bd:#F9A8D4;
+  --bg:#FAF8F4;--ru:#E8E0D4;--ink:#1A1208;--mu:#888;
+}
+html,body{min-height:100vh;background:var(--bg);font-family:'Nunito','Noto Sans TC',sans-serif;font-size:16px;color:var(--ink)}
+.page{max-width:1440px;margin:0 auto;padding:10px 10px 40px}
+
+/* ── Topbar ── */
+.topbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.topbar h1{font-family:'Noto Serif Thai',serif;font-size:1.3em;font-weight:900;color:var(--pur)}
+.tb-right{display:flex;align-items:center;gap:7px;margin-left:auto;flex-wrap:wrap}
+.tog{display:flex;align-items:center;gap:.28em;font-size:.65em;color:var(--mu);cursor:pointer;user-select:none;font-family:'Noto Sans TC',sans-serif;padding:.2em .5em;border-radius:.35em;border:1px solid var(--ru);background:#fff}
+.tog input{accent-color:var(--pur);cursor:pointer;width:13px;height:13px}
+.tog.active-mode{background:var(--pur-lt);border-color:var(--pur-bd);color:var(--pur);font-weight:700}
+.tb-btn{padding:.25em .65em;border-radius:.35em;border:1.5px solid var(--ru);background:#fff;cursor:pointer;font-size:.65em;font-weight:700;color:var(--mu);transition:all .15s;white-space:nowrap}
+.tb-btn:hover{border-color:var(--pur);color:var(--pur);background:var(--pur-lt)}
+.tb-btn.danger{color:var(--high);border-color:var(--high-bd)}.tb-btn.danger:hover{background:var(--high-bg)}
+
+/* ── Word bar ── */
+.word-bar{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--pur-bd);border-radius:.8em;padding:.42em .7em;margin-bottom:8px;min-height:2.8em;box-shadow:0 2px 10px rgba(91,58,135,.07)}
+.wb-chips{display:flex;align-items:center;gap:.25em;flex:1;flex-wrap:wrap;min-height:1.8em}
+.wb-hint{font-size:.62em;color:#ccc;font-family:'Noto Sans TC',sans-serif}
+.chip{font-family:'Noto Serif Thai',serif;font-weight:900;color:var(--pur);padding:.08em .3em;border-radius:.3em;background:var(--pur-lt);border:1px solid var(--pur-bd);white-space:nowrap;display:inline-flex;align-items:center;gap:.15em;font-size:clamp(13px,2.8vw,26px);transition:all .15s}
+.chip.cur{background:var(--pur);color:#fff;border-color:var(--pur)}
+.chip.cur.partial{background:var(--mid-bg);color:var(--mid);border-color:var(--mid-bd)}
+.chip-x{font-size:.48em;color:inherit;opacity:.55;cursor:pointer;background:none;border:none;padding:0;line-height:1;width:1.3em;height:1.3em;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.chip-x:hover{opacity:1;background:rgba(0,0,0,.1)}
+.chip-sep{font-size:.7em;color:var(--ru)}
+.wb-acts{display:flex;gap:4px;flex-shrink:0}
+.wa{padding:.22em .55em;border-radius:.32em;border:1.5px solid var(--ru);background:#fff;cursor:pointer;font-size:.62em;font-weight:700;color:var(--mu);transition:all .15s;white-space:nowrap}
+.wa:hover{border-color:var(--pur);color:var(--pur);background:var(--pur-lt)}
+.wa.play{background:var(--pur);color:#fff;border-color:var(--pur)}.wa.play:hover{background:#4a2d70}
+.wa.del{color:var(--high);border-color:var(--high-bd)}.wa.del:hover{background:var(--high-bg)}
+
+/* ── Split ── */
+.split{display:grid;grid-template-columns:420px 1fr;gap:10px;align-items:start}
+.left-panel{display:flex;flex-direction:column;gap:8px;position:sticky;top:8px}
+.right-panel{display:flex;flex-direction:column;gap:0}
+
+/* ── Result ── */
+.result{background:#fff;border:2px solid var(--pur-bd);border-radius:.9em;padding:.6em .75em .55em;margin-bottom:8px;box-shadow:0 4px 24px rgba(91,58,135,.07);position:relative;overflow:visible;min-height:110px}
+.result::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 60%,var(--pur-lt) 0%,transparent 55%),radial-gradient(ellipse at 80% 40%,#EAF3FB 0%,transparent 55%);opacity:.45;pointer-events:none;z-index:0}
+.result>*{position:relative;z-index:1}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2em 0;gap:.3em}
+.empty-demo{font-family:'Noto Serif Thai',serif;font-size:2.5em;font-weight:900;color:var(--pur);opacity:.15}
+.empty-txt{font-size:.62em;color:var(--mu);font-family:'Noto Sans TC',sans-serif}
+/* Partial (cons selected, no vowel) */
+.partial-view{display:flex;flex-direction:column;align-items:center;padding:.6em 0;
+  background:linear-gradient(135deg,var(--pur-lt) 0%,#fff 100%);border-radius:.6em}
+.partial-big{font-family:'Noto Serif Thai',serif;font-size:clamp(44px,7vw,88px);font-weight:900;line-height:1}
+.partial-mid{color:var(--mid)}.partial-high{color:var(--high)}.partial-low{color:var(--low)}
+.partial-hint{font-size:.6em;color:var(--mu);font-family:'Noto Sans TC',sans-serif;margin-top:.3em}
+/* Full result */
+.parts-row{display:flex;align-items:center;gap:.28em;justify-content:center;margin-bottom:.3em;flex-wrap:wrap}
+.rp{display:flex;flex-direction:column;align-items:center;gap:.08em;padding:.28em .55em;border-radius:.45em;border:1.5px solid;min-width:2.8em}
+.rp.c{background:var(--mid-bg);border-color:var(--mid-bd)}.rp.v{background:var(--gold-bg);border-color:var(--gold-bd)}.rp.f{background:var(--low-bg);border-color:var(--low-bd)}.rp.m{background:var(--pur-lt);border-color:var(--pur-bd)}.rp.cl{background:var(--teal-bg);border-color:var(--teal-bd)}
+.rp-th{font-family:'Noto Serif Thai',serif;font-size:.85em;font-weight:900;line-height:1}
+.rp.c .rp-th{color:var(--mid)}.rp.v .rp-th{color:var(--gold)}.rp.f .rp-th{color:var(--low)}.rp.m .rp-th{color:var(--pur)}.rp.cl .rp-th{color:var(--teal)}
+.rp-lb{font-size:.38em;font-weight:800;opacity:.7;font-family:'Noto Sans TC',sans-serif}
+.op{font-size:.75em;color:var(--mu);font-weight:900}.eq{font-size:.95em;color:var(--pur);font-weight:900}
+.syl-big{font-family:'Noto Serif Thai',serif;font-size:clamp(48px,7.5vw,96px);font-weight:900;color:var(--pur);line-height:1.02;text-align:center;margin:.06em 0 .1em}
+.rom-line{text-align:center;font-size:.85em;font-weight:800;color:var(--pur);opacity:.6;letter-spacing:1.5px;margin-bottom:.35em}
+.trans-chip{display:inline-block;background:var(--low-bg);border:1px solid var(--low-bd);border-radius:.32em;padding:.08em .5em;font-size:.6em;color:var(--low);font-family:'Noto Sans TC',sans-serif;font-weight:700}
+.tts-btn{display:inline-flex;align-items:center;gap:.25em;padding:.22em .65em;border-radius:.4em;border:1.5px solid var(--pur-bd);background:var(--pur-lt);color:var(--pur);cursor:pointer;font-size:.62em;font-weight:700;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
+.tts-btn:hover,.tts-btn.on{background:var(--pur);color:#fff}
+/* Tone table */
+.tone-table{display:flex;gap:.18em;justify-content:center;flex-wrap:wrap;margin-bottom:.35em}
+.tc{padding:.26em .35em;border-radius:.42em;border:2px solid;text-align:center;min-width:3.6em;transition:all .2s;opacity:.35;cursor:default}
+.tc.active{opacity:1;transform:scale(1.07);box-shadow:0 3px 14px rgba(0,0,0,.12)}
+.tc.manual{opacity:1;transform:scale(1.04);box-shadow:0 0 0 3px gold}
+.tc.unavail{opacity:.14;pointer-events:none}
+.tc.quiz-hidden .tc-syl,.tc.quiz-hidden .tc-mark,.tc.quiz-hidden .tc-rom{filter:blur(6px);user-select:none}
+.tc-syl{font-family:'Noto Serif Thai',serif;font-size:1.15em;font-weight:900;line-height:1}
+.tc-mark,.tc-name,.tc-rom,.tc-na{font-size:.42em;opacity:.8;margin-top:.07em;font-family:'Noto Sans TC',sans-serif}
+.tc-mark{font-weight:700}.tc-na{opacity:.35;color:inherit}
+.t1{background:#F0F7FF;border-color:#A8D0E6;color:var(--mid)}.t2{background:#FEF5E7;border-color:#F0C080;color:var(--ora)}.t3{background:#FDECEA;border-color:#F0A89E;color:var(--high)}.t4{background:#EAF7EE;border-color:#A2D9B1;color:var(--low)}.t5{background:var(--pur-lt);border-color:var(--pur-bd);color:var(--pur)}
+/* SOP */
+.sop{background:var(--bg);border:1px solid var(--ru);border-radius:.5em;padding:.4em .6em;font-size:.56em;font-family:'Noto Sans TC',sans-serif;line-height:1.85;display:flex;flex-direction:column;gap:.2em}
+.sop-step{display:flex;align-items:flex-start;gap:.32em}.sop-n{min-width:.95em;height:.95em;border-radius:50%;background:var(--pur);color:#fff;font-size:1em;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.1em}.sop strong{color:var(--pur)}
+/* Example words */
+.ex-words{display:flex;gap:.3em;flex-wrap:wrap;margin-top:.25em}
+.ex-word{padding:.15em .5em;border-radius:.35em;border:1px solid var(--pur-bd);background:var(--pur-lt);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:.3em}
+.ex-word:hover{background:var(--pur);color:#fff}.ex-word:hover .ex-zh{color:#fff;opacity:.8}
+.ex-th{font-family:'Noto Serif Thai',serif;font-size:.85em;font-weight:900;color:var(--pur)}
+.ex-word:hover .ex-th{color:#fff}
+.ex-zh{font-size:.55em;color:var(--mu);font-family:'Noto Sans TC',sans-serif}
+/* Multi-word result */
+.multi-result{display:flex;flex-wrap:wrap;gap:.35em;justify-content:center;align-items:center;padding:.3em 0}
+.syl-item{text-align:center;cursor:pointer;padding:.18em .28em;border-radius:.38em;transition:all .15s}
+.syl-item:hover{background:var(--pur-lt)}
+.syl-th{font-family:'Noto Serif Thai',serif;font-weight:900;color:var(--pur);display:block;line-height:1.05}
+.syl-rom{color:var(--pur);opacity:.55;font-weight:700;display:block}
+/* Vocab / favourites panel */
+.side-panel{background:#fff;border:1.5px solid var(--ru);border-radius:.65em;padding:.38em .42em;display:flex;flex-direction:column;gap:.28em}
+.sp-head{display:flex;align-items:center;gap:.35em;font-size:.5em;font-weight:800;color:var(--mu);letter-spacing:1.5px;text-transform:uppercase;font-family:'Noto Sans TC',sans-serif}
+.sp-act{margin-left:auto;padding:.1em .38em;border-radius:.28em;border:1px solid var(--ru);background:#fff;cursor:pointer;font-size:1em;color:var(--mu);font-weight:700;white-space:nowrap}
+.sp-act:hover{color:var(--pur);border-color:var(--pur-bd)}
+.sp-scroll{overflow-y:auto;display:flex;flex-direction:column;gap:.2em;max-height:130px}
+.sp-item{display:flex;align-items:center;gap:.45em;padding:.22em .38em;border-radius:.38em;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.sp-item:hover{background:var(--pur-lt);border-color:var(--pur-bd)}
+.sp-th{font-family:'Noto Serif Thai',serif;font-size:1.15em;font-weight:900;color:var(--pur)}
+.sp-rom{font-size:.52em;color:var(--mu);font-weight:700}
+.sp-time{font-size:.46em;color:#ccc;margin-left:auto;font-family:'Noto Sans TC',sans-serif}
+.sp-star{font-size:.7em;margin-left:2px;cursor:pointer;opacity:.4;transition:all .15s}
+.sp-star.on{opacity:1}
+.sp-empty{font-size:.56em;color:#ccc;text-align:center;padding:.45em;font-family:'Noto Sans TC',sans-serif}
+/* Quiz mode overlay */
+.quiz-bar{background:var(--pur);color:#fff;border-radius:.6em;padding:.4em .7em;margin-bottom:6px;display:flex;align-items:center;gap:.5em;font-size:.65em;font-family:'Noto Sans TC',sans-serif}
+.quiz-bar strong{font-size:1.1em}
+.quiz-score{margin-left:auto;font-weight:700;font-size:1.1em}
+.quiz-reveal{padding:.2em .6em;border-radius:.32em;border:none;background:rgba(255,255,255,.25);color:#fff;cursor:pointer;font-size:1em;font-weight:700}
+.quiz-reveal:hover{background:rgba(255,255,255,.4)}
+/* Random quiz */
+.rand-quiz{display:flex;flex-direction:column;align-items:center;gap:.5em;padding:.5em 0}
+.rand-syl{font-family:'Noto Serif Thai',serif;font-size:clamp(60px,10vw,110px);font-weight:900;color:var(--pur);line-height:1}
+.rand-tone-btns{display:flex;gap:.4em;flex-wrap:wrap;justify-content:center}
+.rtb{padding:.4em .9em;border-radius:.5em;border:2px solid var(--pur-bd);background:var(--pur-lt);color:var(--pur);cursor:pointer;font-size:.75em;font-weight:800;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
+.rtb:hover{background:var(--pur);color:#fff}
+.rtb.correct{background:var(--low);color:#fff;border-color:var(--low);animation:pop .3s ease}
+.rtb.wrong{background:var(--high);color:#fff;border-color:var(--high);animation:shake .3s ease}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+/* Selectors */
+.sel-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.sel-col{background:#fff;border:1.5px solid var(--ru);border-radius:.62em;padding:.38em .38em;display:flex;flex-direction:column;gap:.3em}
+.sel-head{font-size:.5em;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--mu);padding-bottom:.22em;border-bottom:1px solid var(--ru)}
+.sel-grp{display:flex;flex-direction:column;gap:.14em}
+.gn{font-size:.46em;font-weight:800;padding:.1em .38em;border-radius:.26em;display:inline-block;width:fit-content;margin-bottom:.06em}
+.gn.mid{background:var(--mid-bg);color:var(--mid)}.gn.high{background:var(--high-bg);color:var(--high)}.gn.low{background:var(--low-bg);color:var(--low)}
+.gn.short{background:var(--gold-bg);color:var(--gold)}.gn.long{background:var(--mid-bg);color:var(--mid)}.gn.compound{background:var(--ora-bg);color:var(--ora)}.gn.special{background:var(--rose-bg);color:var(--rose)}
+.gn.none-g{background:#f0f0f0;color:#888}.gn.live{background:var(--low-bg);color:var(--low)}.gn.dead{background:var(--high-bg);color:var(--high)}.gn.tmark{background:var(--pur-lt);color:var(--pur)}.gn.cluster-g{background:var(--teal-bg);color:var(--teal)}
+.btn-row{display:flex;flex-wrap:wrap;gap:.18em}
+/* Consonant btn */
+.cbtn{font-family:'Noto Serif Thai',serif;font-size:.95em;font-weight:900;width:2.15em;height:2.15em;border-radius:.38em;border:2px solid transparent;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;line-height:1;padding-bottom:.35em}
+.cbtn span.rom{position:absolute;bottom:.12em;right:.08em;font-size:.38em;font-family:'Nunito',sans-serif;font-weight:800;opacity:.7;letter-spacing:-.01em}
+.cbtn.mid{background:var(--mid-bg);color:var(--mid);border-color:var(--mid-bd)}.cbtn.high{background:var(--high-bg);color:var(--high);border-color:var(--high-bd)}.cbtn.low{background:var(--low-bg);color:var(--low);border-color:var(--low-bd)}.cbtn.teal{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-bd)}
+.cbtn:hover{transform:scale(1.12);box-shadow:0 3px 10px rgba(0,0,0,.1)}.cbtn.on{box-shadow:0 0 0 3px var(--pur);transform:scale(1.15);z-index:2}
+/* Vowel btn — uses อ as placeholder */
+.vbtn{font-family:'Noto Serif Thai',serif;font-size:.82em;font-weight:900;padding:.2em .35em .32em;border-radius:.38em;border:2px solid transparent;cursor:pointer;transition:all .15s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:0;min-width:2.4em;position:relative;padding-bottom:.44em}
+.vbtn span.vr{position:absolute;bottom:.1em;left:0;right:0;text-align:center;font-size:.38em;font-family:'Nunito',sans-serif;font-weight:800;opacity:.7}
+.vbtn.short{background:var(--gold-bg);color:var(--gold);border-color:var(--gold-bd)}.vbtn.long{background:var(--mid-bg);color:var(--mid);border-color:var(--mid-bd)}.vbtn.compound{background:var(--ora-bg);color:var(--ora);border-color:var(--ora-bd)}.vbtn.special{background:var(--rose-bg);color:var(--rose);border-color:var(--rose-bd)}
+.vbtn:hover{transform:scale(1.07);box-shadow:0 3px 10px rgba(0,0,0,.1)}.vbtn.on{box-shadow:0 0 0 3px var(--pur);transform:scale(1.1)}
+/* Final btn */
+.fbtn{font-family:'Noto Serif Thai',serif;font-size:.82em;font-weight:700;padding:.18em .3em .3em;border-radius:.38em;border:2px solid var(--ru);cursor:pointer;transition:all .15s;background:#fff;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:0;min-width:1.95em;position:relative;padding-bottom:.3em}
+.fbtn span.fr{position:absolute;bottom:.08em;left:0;right:0;text-align:center;font-size:.36em;font-family:'Nunito',sans-serif;font-weight:800;opacity:.6}
+.fbtn:hover{border-color:var(--pur);background:var(--pur-lt)}.fbtn.on{background:var(--pur-lt);border-color:var(--pur);box-shadow:0 0 0 2px var(--pur)}
+.fbtn.live-btn{background:var(--low-bg);border-color:var(--low-bd);color:var(--low)}.fbtn.dead-btn{background:var(--high-bg);border-color:var(--high-bd);color:var(--high)}.fbtn.none-btn{background:#f5f5f5;color:#888;border-color:#ddd}
+/* Mark btn */
+.mbtn{font-family:'Noto Serif Thai',serif;font-size:.88em;font-weight:900;padding:.18em .46em .32em;border-radius:.38em;border:2px solid var(--pur-bd);cursor:pointer;transition:all .15s;background:var(--pur-lt);color:var(--pur);display:flex;flex-direction:column;align-items:center;gap:0;min-width:2.4em;position:relative;padding-bottom:.4em}
+.mbtn span.mr{position:absolute;bottom:.1em;left:0;right:0;text-align:center;font-size:.33em;font-family:'Nunito',sans-serif;font-weight:800;opacity:.65}
+.mbtn:hover{transform:scale(1.07)}.mbtn.on{box-shadow:0 0 0 3px var(--gold);background:var(--gold-bg);color:var(--gold);border-color:var(--gold-bd)}.mbtn.none-m{background:#f5f5f5;color:#666;border-color:#ddd}
+/* ห นำ / cluster */
+.extra-wrap{border-radius:.5em;padding:.28em .36em;display:flex;flex-direction:column;gap:.18em;animation:sIn .2s ease}
+.extra-wrap.haw{background:var(--gold-bg);border:1.5px solid var(--gold-bd)}.extra-wrap.clu{background:var(--teal-bg);border:1.5px solid var(--teal-bd)}
+@keyframes sIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.extra-note{font-size:.42em;font-family:'Noto Sans TC',sans-serif;line-height:1.4}
+.extra-wrap.haw .extra-note{color:var(--gold)}.extra-wrap.clu .extra-note{color:var(--teal)}
+/* Keyboard shortcut badge */
+.kbd{display:inline-block;font-size:.55em;background:#f0f0f0;border:1px solid #ccc;border-radius:.2em;padding:.02em .22em;font-family:'Nunito',monospace;color:var(--mu);vertical-align:middle}
+/* Mobile */
+@media(max-width:700px){
+  .split{grid-template-columns:1fr;gap:8px}.left-panel{position:static}
+  .sel-row{grid-template-columns:1fr}.syl-big{font-size:clamp(40px,13vw,78px)}
+  .page{padding:7px 7px 20px}.topbar h1{font-size:1.05em}
+  .mob-tab-row{display:flex;gap:0;border-bottom:2px solid var(--ru);margin-bottom:5px;overflow-x:auto}
+  .mob-tab{flex:1;padding:.35em .2em;border:none;background:none;cursor:pointer;font-size:.56em;font-weight:700;color:var(--mu);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;font-family:'Noto Sans TC',sans-serif}
+  .mob-tab.on{color:var(--pur);border-bottom-color:var(--pur);background:var(--pur-lt)}
+  .mobile-accordion .sel-col{display:none}.mobile-accordion .sel-col.open{display:flex}
+}
+@media(min-width:701px){.mob-tab-row{display:none}.sel-col{display:flex!important}}
+.scroll-note{font-size:.46em;color:var(--mu);text-align:center;margin-top:10px;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- Topbar -->
+<div class="topbar">
+  <h1>🔤 泰語拼音工具</h1>
+  <div class="tb-right">
+    <label class="tog" id="tog-tts"><input type="checkbox" id="tts-auto" checked onchange="ttsAuto=this.checked"> 🔊 自動</label>
+    <label class="tog" id="tog-rom"><input type="checkbox" id="show-rom" checked onchange="showRom=this.checked;renderResult()"> 音標</label>
+    <label class="tog" id="tog-ex"><input type="checkbox" id="show-ex" checked onchange="showEx=this.checked;renderResult()"> 例詞</label>
+    <button class="tb-btn" id="quiz-toggle" onclick="toggleQuiz()">🎯 聲調練習</button>
+    <button class="tb-btn" id="rand-toggle" onclick="toggleRand()">🎲 隨機出題</button>
+    <button class="tb-btn" onclick="toggleBig()">🔍 投影模式</button>
+    <select id="voice-sel" onchange="ttsVoice=this.value;ttsCache={}" style="font-size:.62em;padding:.22em .4em;border-radius:.35em;border:1px solid var(--ru);background:#fff;color:var(--ink);cursor:pointer" title="語音選擇">
+      <option value="th-TH-Neural2-C">Neural2 女聲</option>
+      <option value="th-TH-Neural2-D">Neural2 男聲</option>
+      <option value="th-TH-Standard-A">Standard 女聲</option>
+      <option value="th-TH-Standard-B">Standard 男聲</option>
+    </select>
+    <input type="range" id="speed-sl" min="0.5" max="1.5" step="0.05" value="1.0"
+      oninput="ttsSpeed=parseFloat(this.value);document.getElementById('speed-lbl').textContent=this.value+'x';ttsCache={}"
+      style="width:70px;accent-color:var(--pur)" title="語速">
+    <span id="speed-lbl" style="font-size:.62em;color:var(--mu);min-width:2.5em">1.0x</span>
+    <button class="tb-btn danger" onclick="resetAll()">↺ 重置</button>
+  </div>
+</div>
+
+<!-- Word bar -->
+<div class="word-bar">
+  <div class="wb-chips" id="wb-chips">
+    <span class="wb-hint" id="wb-hint">按子音開始…<span class="kbd">Space</span>加下一個 <span class="kbd">⌫</span>退格 <span class="kbd">Esc</span>清除</span>
+  </div>
+  <div class="wb-acts">
+    <button class="wa" onclick="backspace()" title="退格">⌫</button>
+    <button class="wa del" onclick="clearAll()" title="清除 Esc">✕</button>
+    <button class="wa play" onclick="playAll()" title="播放全部">▶ 播放</button>
+  </div>
+</div>
+
+<!-- Random quiz overlay -->
+<div id="rand-panel" style="display:none">
+  <div class="quiz-bar">
+    <strong>🎲 隨機出題</strong> <span id="rand-desc">猜測下面音節的聲調</span>
+    <span class="quiz-score" id="rand-score">✅0 ❌0</span>
+    <button class="quiz-reveal" onclick="nextRand()">換一題 →</button>
+    <button class="quiz-reveal" onclick="toggleRand()">✕ 結束</button>
+  </div>
+  <div class="rand-quiz" id="rand-quiz"></div>
+</div>
+
+<div class="split">
+  <div class="left-panel">
+    <div class="result" id="result">
+      <div class="empty"><div class="empty-txt">👆 按下子音開始拼字</div></div>
+    </div>
+    <!-- History -->
+    <div class="side-panel" id="hist-panel">
+      <div class="sp-head">📋 練習紀錄 <button class="sp-act" onclick="exportVocab()">匯出</button><button class="sp-act" onclick="clearHistory()">清除</button></div>
+      <div class="sp-scroll" id="hist-scroll"><div class="sp-empty">還沒有練習紀錄</div></div>
+    </div>
+    <!-- Vocabulary / favourites -->
+    <div class="side-panel" id="fav-panel">
+      <div class="sp-head">⭐ 我的單字本 <button class="sp-act" onclick="exportVocab('fav')">匯出</button><button class="sp-act" onclick="clearFav()">清除</button></div>
+      <div class="sp-scroll" id="fav-scroll"><div class="sp-empty">點擊 ☆ 把單字加入收藏</div></div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="mob-tab-row">
+      <button class="mob-tab on" onclick="mobTab(0,this)">① 子音</button>
+      <button class="mob-tab" onclick="mobTab(1,this)">② 母音</button>
+      <button class="mob-tab" onclick="mobTab(2,this)">③ 尾音</button>
+    </div>
+    <div class="sel-row mobile-accordion">
+      <!-- Col 1 -->
+      <div class="sel-col open" id="mob-col-0">
+        <div class="sel-head">① 子音 พยัญชนะ</div>
+        <div class="sel-grp"><div class="gn mid">🔵 中子音</div><div class="btn-row" id="g-mid"></div></div>
+        <div class="sel-grp"><div class="gn high">🔴 高子音</div><div class="btn-row" id="g-high"></div></div>
+        <div class="sel-grp"><div class="gn low">🟢 低子音</div><div class="btn-row" id="g-low"></div></div>
+        <div id="haw-con" style="display:none">
+          <div class="extra-wrap haw">
+            <div class="gn" style="background:var(--gold-bg);color:var(--gold)">⭐ ห นำ</div>
+            <div class="btn-row" id="g-sec"></div>
+            <div class="extra-note">ห 不發音，低子音套高子音聲調規則</div>
+          </div>
+        </div>
+        <div id="clu-con" style="display:none">
+          <div class="extra-wrap clu">
+            <div class="gn cluster-g">🔷 複合子音</div>
+            <div class="btn-row" id="g-clu"></div>
+            <div class="extra-note" id="clu-note">選 ร/ล/ว</div>
+          </div>
+        </div>
+      </div>
+      <!-- Col 2 -->
+      <div class="sel-col" id="mob-col-1">
+        <div class="sel-head">② 母音 สระ</div>
+        <div class="sel-grp"><div class="gn short">🟡 短母音</div><div class="btn-row" id="g-short"></div></div>
+        <div class="sel-grp"><div class="gn long">🔵 長母音</div><div class="btn-row" id="g-long"></div></div>
+        <div class="sel-grp"><div class="gn compound">🟠 複合母音</div><div class="btn-row" id="g-compound"></div></div>
+        <div class="sel-grp"><div class="gn special">✨ 特殊母音</div><div class="btn-row" id="g-special"></div></div>
+        <div class="sel-grp" style="margin-top:.25em;border-top:1px solid var(--ru);padding-top:.28em">
+          <div class="gn tmark">🎵 聲調符號</div>
+          <div class="btn-row" id="g-marks"></div>
+        </div>
+      </div>
+      <!-- Col 3 -->
+      <div class="sel-col" id="mob-col-2">
+        <div class="sel-head">③ 尾音 ตัวสะกด</div>
+        <div class="sel-grp"><div class="gn none-g">— 無尾音</div><div class="btn-row" id="g-none"></div></div>
+        <div class="sel-grp"><div class="gn live">🟢 活尾音</div><div class="btn-row" id="g-live"></div></div>
+        <div class="sel-grp"><div class="gn dead">🔴 死尾音</div><div class="btn-row" id="g-dead"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="scroll-note">@thai.notebook · v10 · Space=下一音節 · Backspace=退格 · Esc=清除 · 1-5=猜聲調</div>
+</div>
+
+<script>
+/* ════ DATA ════ */
+const CONS={
+  mid:[{c:"ก",rom:"g"},{c:"จ",rom:"j"},{c:"ฎ",rom:"dt"},{c:"ฏ",rom:"dt"},{c:"ด",rom:"dt"},{c:"ต",rom:"dt"},{c:"บ",rom:"bp"},{c:"ป",rom:"bp"},{c:"อ",rom:""}],
+  high:[{c:"ข",rom:"k"},{c:"ฉ",rom:"ch"},{c:"ฐ",rom:"t"},{c:"ถ",rom:"t"},{c:"ผ",rom:"p"},{c:"ฝ",rom:"f"},{c:"ศ",rom:"s"},{c:"ษ",rom:"s"},{c:"ส",rom:"s"},{c:"ห",rom:"h"}],
+  low:[{c:"ค",rom:"k"},{c:"ฆ",rom:"k"},{c:"ง",rom:"ng"},{c:"ช",rom:"ch"},{c:"ซ",rom:"s"},{c:"ฌ",rom:"ch"},{c:"ญ",rom:"y"},{c:"ฑ",rom:"t"},{c:"ฒ",rom:"t"},{c:"ณ",rom:"n"},{c:"ท",rom:"t"},{c:"ธ",rom:"t"},{c:"น",rom:"n"},{c:"พ",rom:"p"},{c:"ฟ",rom:"f"},{c:"ภ",rom:"p"},{c:"ม",rom:"m"},{c:"ย",rom:"y"},{c:"ร",rom:"r"},{c:"ล",rom:"l"},{c:"ว",rom:"w"},{c:"ฬ",rom:"l"},{c:"ฮ",rom:"h"}],
+};
+['mid','high','low'].forEach(cls=>CONS[cls].forEach(d=>d.cls=cls));
+const VOWELS=[
+  {d:"อะ",rom:"a",dur:"short",g:"short",render(C,F,M){return F?C+"ั"+M+F:C+M+"ะ"},rf(C,F){return rC(C)+"a"+rF(F)}},
+  {d:"อิ",rom:"i",dur:"short",g:"short",render(C,F,M){return C+"ิ"+M+(F||"")},rf(C,F){return rC(C)+"i"+rF(F)}},
+  {d:"อึ",rom:"ue",dur:"short",g:"short",render(C,F,M){return C+"ึ"+M+(F||"")},rf(C,F){return rC(C)+"ue"+rF(F)}},
+  {d:"อุ",rom:"u",dur:"short",g:"short",render(C,F,M){return C+"ุ"+M+(F||"")},rf(C,F){return rC(C)+"u"+rF(F)}},
+  {d:"เอะ",rom:"e",dur:"short",g:"short",render(C,F,M){return F?"เ"+C+"็"+M+F:"เ"+C+M+"ะ"},rf(C,F){return rC(C)+"e"+rF(F)}},
+  {d:"แอะ",rom:"ae",dur:"short",g:"short",render(C,F,M){return F?"แ"+C+"็"+M+F:"แ"+C+M+"ะ"},rf(C,F){return rC(C)+"ae"+rF(F)}},
+  {d:"โอะ",rom:"o",dur:"short",g:"short",render(C,F,M){return F?C+"็"+M+F:"โ"+C+M+"ะ"},rf(C,F){return rC(C)+"o"+rF(F)}},
+  {d:"เอาะ",rom:"or",dur:"short",g:"short",render(C,F,M){return F?C+"อ"+M+F:"เ"+C+M+"าะ"},rf(C,F){return rC(C)+"or"+rF(F)}},
+  {d:"เอออะ",rom:"er",dur:"short",g:"short",render(C,F,M){return "เ"+C+M+"อะ"},rf(C,F){return rC(C)+"er"}},
+  {d:"อา",rom:"aa",dur:"long",g:"long",render(C,F,M){return C+M+"า"+(F||"")},rf(C,F){return rC(C)+"aa"+rF(F)}},
+  {d:"อี",rom:"ii",dur:"long",g:"long",render(C,F,M){return C+"ี"+M+(F||"")},rf(C,F){return rC(C)+"ii"+rF(F)}},
+  {d:"อือ",rom:"uue",dur:"long",g:"long",render(C,F,M){return F?C+"ื"+M+F:C+M+"ือ"},rf(C,F){return rC(C)+"uue"+rF(F)}},
+  {d:"อู",rom:"uu",dur:"long",g:"long",render(C,F,M){return C+"ู"+M+(F||"")},rf(C,F){return rC(C)+"uu"+rF(F)}},
+  {d:"เอ",rom:"ee",dur:"long",g:"long",render(C,F,M){return "เ"+C+M+(F||"")},rf(C,F){return rC(C)+"ee"+rF(F)}},
+  {d:"แอ",rom:"ae",dur:"long",g:"long",render(C,F,M){return "แ"+C+M+(F||"")},rf(C,F){return rC(C)+"ae"+rF(F)}},
+  {d:"โอ",rom:"oo",dur:"long",g:"long",render(C,F,M){return "โ"+C+M+(F||"")},rf(C,F){return rC(C)+"oo"+rF(F)}},
+  {d:"ออ",rom:"or",dur:"long",g:"long",render(C,F,M){return C+M+"อ"+(F||"")},rf(C,F){return rC(C)+"or"+rF(F)}},
+  {d:"เออ",rom:"er",dur:"long",g:"long",render(C,F,M){return F?"เ"+C+"ิ"+M+F:"เ"+C+M+"อ"},rf(C,F){return rC(C)+"er"+rF(F)}},
+  {d:"ไอ",rom:"ai",dur:"long",g:"special",render(C,F,M){return "ไ"+C+M+(F||"")},rf(C,F){return rC(C)+"ai"+rF(F)}},
+  {d:"ใอ",rom:"ai",dur:"long",g:"special",render(C,F,M){return "ใ"+C+M+(F||"")},rf(C,F){return rC(C)+"ai"+rF(F)}},
+  {d:"เอา",rom:"ao",dur:"long",g:"special",render(C,F,M){return "เ"+C+M+"า"+(F||"")},rf(C,F){return rC(C)+"ao"+rF(F)}},
+  {d:"อำ",rom:"am",dur:"short",g:"special",render(C,F,M){return C+M+"ำ"},rf(C,F){return rC(C)+"am"}},
+  {d:"ฤ",rom:"rue",dur:"long",g:"special",render(C,F,M){return "ฤ"+(F||"")},rf(C,F){return"rue"+rF(F)}},
+  {d:"ฤๅ",rom:"ruue",dur:"long",g:"special",render(C,F,M){return "ฤๅ"},rf(){return"ruue"}},
+  {d:"เอีย",rom:"ia",dur:"long",g:"compound",render(C,F,M){return "เ"+C+"ี"+M+"ย"+(F||"")},rf(C,F){return rC(C)+"ia"+rF(F)}},
+  {d:"เอือ",rom:"uea",dur:"long",g:"compound",render(C,F,M){return F?"เ"+C+"ื"+M+F:"เ"+C+"ื"+M+"อ"},rf(C,F){return rC(C)+"uea"+rF(F)}},
+  {d:"อัว",rom:"ua",dur:"long",g:"compound",render(C,F,M){return F?C+"ั"+M+F:C+"ั"+M+"ว"},rf(C,F){return rC(C)+"ua"+rF(F)}},
+  {d:"เอียะ",rom:"ia",dur:"short",g:"compound",render(C,F,M){return "เ"+C+"ี"+M+"ยะ"},rf(C,F){return rC(C)+"ia"}},
+  {d:"เอือะ",rom:"uea",dur:"short",g:"compound",render(C,F,M){return "เ"+C+"ื"+M+"อะ"},rf(C,F){return rC(C)+"uea"}},
+  {d:"อัวะ",rom:"ua",dur:"short",g:"compound",render(C,F,M){return C+"ั"+M+"วะ"},rf(C,F){return rC(C)+"ua"}},
+];
+/* vowel display with อ placeholder */
+function vDisp(v){
+  // Replace ◌ concept: use อ as the placeholder consonant in display
+  const d=v.d;
+  // Map display name to actual อ-based form
+  const MAP={
+    "อะ":"อะ","อิ":"อิ","อึ":"อึ","อุ":"อุ",
+    "เอะ":"เอะ","แอะ":"แอะ","โอะ":"โอะ","เอาะ":"เอาะ","เอออะ":"เอออะ",
+    "อา":"อา","อี":"อี","อือ":"อือ","อู":"อู",
+    "เอ":"เอ","แอ":"แอ","โอ":"โอ","ออ":"ออ","เออ":"เออ",
+    "ไอ":"ไอ","ใอ":"ใอ","เอา":"เอา","อำ":"อำ","ฤ":"ฤ","ฤๅ":"ฤๅ",
+    "เอีย":"เอีย","เอือ":"เอือ","อัว":"อัว",
+    "เอียะ":"เอียะ","เอือะ":"เอือะ","อัวะ":"อัวะ",
+  };
+  return MAP[d]||d;
+}
+const FINALS={
+  none:[{c:"—",rom:"",type:"none",lbl:"無"}],
+  live:[{c:"น",rom:"n",type:"live",lbl:"n"},{c:"ณ",rom:"n",type:"live",lbl:"n"},{c:"ญ",rom:"n",type:"live",lbl:"n"},{c:"ร",rom:"n",type:"live",lbl:"n"},{c:"ล",rom:"n",type:"live",lbl:"n"},{c:"ฬ",rom:"n",type:"live",lbl:"n"},{c:"ม",rom:"m",type:"live",lbl:"m"},{c:"ง",rom:"ng",type:"live",lbl:"ng"},{c:"ว",rom:"o",type:"live",lbl:"w/o"},{c:"ย",rom:"y",type:"live",lbl:"y"}],
+  dead:[{c:"ก",rom:"k",type:"dead",lbl:"k"},{c:"ข",rom:"k",type:"dead",lbl:"k"},{c:"ค",rom:"k",type:"dead",lbl:"k"},{c:"ฆ",rom:"k",type:"dead",lbl:"k"},{c:"บ",rom:"p",type:"dead",lbl:"p"},{c:"ป",rom:"p",type:"dead",lbl:"p"},{c:"พ",rom:"p",type:"dead",lbl:"p"},{c:"ฟ",rom:"p",type:"dead",lbl:"p"},{c:"ภ",rom:"p",type:"dead",lbl:"p"},{c:"ด",rom:"t",type:"dead",lbl:"t"},{c:"จ",rom:"t",type:"dead",lbl:"t"},{c:"ช",rom:"t",type:"dead",lbl:"t"},{c:"ฎ",rom:"t",type:"dead",lbl:"t"},{c:"ฏ",rom:"t",type:"dead",lbl:"t"},{c:"ฐ",rom:"t",type:"dead",lbl:"t"},{c:"ฑ",rom:"t",type:"dead",lbl:"t"},{c:"ฒ",rom:"t",type:"dead",lbl:"t"},{c:"ถ",rom:"t",type:"dead",lbl:"t"},{c:"ท",rom:"t",type:"dead",lbl:"t"},{c:"ธ",rom:"t",type:"dead",lbl:"t"},{c:"ศ",rom:"t",type:"dead",lbl:"t"},{c:"ษ",rom:"t",type:"dead",lbl:"t"},{c:"ส",rom:"t",type:"dead",lbl:"t"}],
+};
+const TM=[{mark:"",char:"",lbl:"無符號",idx:0},{mark:"่",char:"่",lbl:"ไม้เอก",idx:2},{mark:"้",char:"้",lbl:"ไม้โท",idx:3},{mark:"๊",char:"๊",lbl:"ไม้ตรี",idx:4},{mark:"๋",char:"๋",lbl:"ไม้จัตวา",idx:5}];
+const TD=[null,{n:1,name:"平聲",mark:"無",desc:"長平",cls:"t1"},{n:2,name:"低聲",mark:"◌่",desc:"低降",cls:"t2"},{n:3,name:"降聲",mark:"◌้",desc:"高降",cls:"t3"},{n:4,name:"高聲",mark:"◌๊",desc:"高平",cls:"t4"},{n:5,name:"升聲",mark:"◌๋",desc:"先降後升",cls:"t5"}];
+const MC=["","","่","้","๊","๋"];
+const CS={ก:["ร","ล","ว"],ข:["ร","ล","ว"],ค:["ร","ล","ว"],ป:["ร","ล"],ผ:["ล"],พ:["ร","ล"],ต:["ร"],ถ:["ร"],ท:["ร"],จ:["ร"]};
+const CR={กร:"gr",กล:"gl",กว:"gw",ขร:"khr",ขล:"khl",ขว:"khw",คร:"khr",คล:"khl",คว:"khw",ปร:"bpr",ปล:"bpl",ผล:"phl",พร:"phr",พล:"phl",ตร:"dtr",ถร:"thr",ทร:"thr",จร:"jr"};
+const HN=[{c:"ง",rom:"ng"},{c:"น",rom:"n"},{c:"ม",rom:"m"},{c:"ย",rom:"y"},{c:"ร",rom:"r"},{c:"ล",rom:"l"},{c:"ว",rom:"w"},{c:"ญ",rom:"y"}];
+/* Example words database */
+const EX={
+  กา:[["กา","烏鴉"],["กาแฟ","咖啡"],["กางเกง","褲子"]],
+  มา:[["มา","來"],["มาก","很多"],["มาลัย","花環"]],
+  ดี:[["ดี","好"],["ดีใจ","高興"],["ดีงาม","美好"]],
+  ไป:[["ไป","去"],["ไปมา","來去"],["ไปรษณีย์","郵局"]],
+  กิน:[["กิน","吃"],["กินข้าว","吃飯"]],
+  น้ำ:[["น้ำ","水"],["น้ำตา","眼淚"],["น้ำใจ","好意"]],
+  รัก:[["รัก","愛"],["รักษา","治療"],["รักษาการ","代理"]],
+  คน:[["คน","人"],["คนดี","好人"],["คนไทย","泰國人"]],
+  ใจ:[["ใจ","心"],["ใจดี","好心"],["ใจกว้าง","大方"]],
+  มือ:[["มือ","手"],["มือถือ","手機"],["มือสอง","二手"]],
+};
+/* ── Romanisation ── */
+function rC(c){const m={ก:"g",จ:"j",ฎ:"dt",ฏ:"dt",ด:"dt",ต:"dt",บ:"bp",ป:"bp",อ:"",ข:"k",ฉ:"ch",ฐ:"t",ถ:"t",ผ:"p",ฝ:"f",ศ:"s",ษ:"s",ส:"s",ห:"h",ค:"k",ฆ:"k",ง:"ng",ช:"ch",ซ:"s",ฌ:"ch",ญ:"y",ฑ:"t",ฒ:"t",ณ:"n",ท:"t",ธ:"t",น:"n",พ:"p",ฟ:"f",ภ:"p",ม:"m",ย:"y",ร:"r",ล:"l",ว:"w",ฬ:"l",ฮ:"h"};return(c in m)?m[c]:c;}
+function rF(f){if(!f||f==="—")return"";const m={ก:"k",ข:"k",ค:"k",ฆ:"k",บ:"p",ป:"p",พ:"p",ฟ:"p",ภ:"p",ด:"t",จ:"t",ช:"t",ฎ:"t",ฏ:"t",ฐ:"t",ฑ:"t",ฒ:"t",ถ:"t",ท:"t",ธ:"t",ศ:"t",ษ:"t",ส:"t",น:"n",ณ:"n",ญ:"n",ร:"n",ล:"n",ฬ:"n",ม:"m",ง:"ng",ว:"o",ย:"y"};return(f in m)?m[f]:f;}
+const TR=["","","̀","̂","́","̌"];
+function aT(rom,t){if(t===1)return rom;const i=rom.search(/[aeiouæɔə]/i);return i<0?rom+TR[t]:rom.slice(0,i+1)+TR[t]+rom.slice(i+1);}
+/* ── Tone ── */
+function cDef(cls,dur,ft){const sh=dur==="short",dead=ft==="dead",live=ft==="live";if(cls==="mid")return dead?2:(sh?2:1);if(cls==="high")return dead?2:5;if(dead)return sh?4:3;if(live)return 1;return sh?4:1;}
+function mToT(cls,mi){if(cls==="mid"){const t={0:1,2:2,3:3,4:4,5:5};return t[mi]||1;}if(cls==="high"){const t={0:5,2:2,3:3};return t[mi]||5;}const t={0:1,2:3,3:4};return t[mi]||1;}
+function tToM(cls,t){if(cls==="mid"){const m={1:0,2:2,3:3,4:4,5:5};return m[t]??null;}if(cls==="high"){const m={5:0,2:2,3:3};return m[t]??null;}const m={1:0,3:2,4:3};return m[t]??null;}
+/* ── TTS ── */
+let ttsAuto=true,showRom=true,showEx=true,quizMode=false,bigMode=false,randMode=false;
+
+/* Google Cloud TTS config */
+let ttsVoice="th-TH-Neural2-C"; // female neural voice
+let ttsSpeed=1.0;                // speaking rate
+let ttsCache={};               // cache audio to avoid duplicate calls
+
+async function speak(text, cb){
+  if(!text) return;
+  text = text.trim();
+  if(!text) return;
+  // Build SSML: wrap each Thai syllable in break tags for natural rhythm
+  // For multi-char text, add slight pauses between visual groups
+  const ssml = buildSSML(text);
+  try {
+    await speakGCP(ssml, text, cb);
+  } catch(e) {
+    console.warn("GCP TTS failed, falling back to Web Speech:", e.message);
+    speakFallback(text, cb);
+  }
+}
+
+function buildSSML(text){
+  // Add short breaks between syllable boundaries (spaces or repeated consonants)
+  // For single syllables: just wrap in speak tag
+  // For multiple syllables: add 80ms break between each Thai character group
+  const escaped = text
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+  return `<speak><prosody rate="${ttsSpeed}">${escaped}</prosody></speak>`;
+}
+
+async function speakGCP(ssml, rawText, cb){
+  // Check cache
+  const cacheKey = rawText+"_"+ttsVoice+"_"+ttsSpeed;
+  let audioData = ttsCache[cacheKey];
+  if(!audioData){
+    try {
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: rawText,
+          voice: ttsVoice,
+          speed: ttsSpeed
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      audioData = data.audioContent; // base64 MP3 from edge function
+      ttsCache[cacheKey] = audioData;
+    } catch(e) {
+      console.warn("TTS API failed, falling back to Web Speech:", e.message);
+      speakFallback(rawText, cb);
+      return;
+    }
+  }
+  // Play via Audio element
+  const audio = new Audio("data:audio/mp3;base64,"+audioData);
+  audio.playbackRate = 1.0;
+  if(cb) audio.onended = cb;
+  await audio.play();
+}
+
+function speakFallback(text, cb){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const vv = window.speechSynthesis.getVoices();
+  const tv = vv.find(v=>v.lang.startsWith("th"));
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang="th-TH"; u.rate=0.8; u.pitch=1;
+  if(tv) u.voice=tv;
+  if(cb) u.onend=cb;
+  setTimeout(()=>window.speechSynthesis.speak(u), 80);
+}
+
+window.speechSynthesis&&window.speechSynthesis.getVoices();
+window.addEventListener("voiceschanged",()=>window.speechSynthesis.getVoices());
+/* ── State ── */
+let syllables=[],S={cons:null,vowel:null,final:null,markOverride:null,secCons:null,cluCons:null};
+let history=[],favourites=[];
+/* ── Selectors render ── */
+function renderSels(){
+  ["mid","high","low"].forEach(cls=>{
+    document.getElementById("g-"+cls).innerHTML=CONS[cls].map(d=>`<button class="cbtn ${cls}" data-c="${d.c}" onclick="pickCons('${d.c}','${cls}','${d.rom}')">${d.c}<span class="rom">${d.rom}</span></button>`).join("");
+  });
+  ["short","long","compound","special"].forEach(g=>{
+    document.getElementById("g-"+g).innerHTML=VOWELS.filter(v=>v.g===g).map(v=>{
+      const i=VOWELS.indexOf(v);
+      return `<button class="vbtn ${g}" data-i="${i}" onclick="pickVowel(${i})"><span>${vDisp(v)}</span><span class="vr">${v.rom}</span></button>`;
+    }).join("");
+  });
+  document.getElementById("g-marks").innerHTML=TM.map(m=>`<button class="mbtn${m.idx===0?" none-m":""} ${m.idx===0?" on":""}" data-mi="${m.idx}" onclick="pickMark(${m.idx})"><span>${m.idx===0?"ø":"อ"+m.char}</span><span class="mr">${m.lbl}</span></button>`).join("");
+  document.getElementById("g-none").innerHTML=`<button class="fbtn none-btn on" data-c="—" onclick="pickFinal('none',0)"><span>—</span><span class="fr">無</span></button>`;
+  ["live","dead"].forEach(type=>{
+    document.getElementById("g-"+type).innerHTML=FINALS[type].map((f,i)=>`<button class="fbtn ${type}-btn" data-c="${f.c}" onclick="pickFinal('${type}',${i})"><span>${f.c}</span><span class="fr">${f.rom}</span></button>`).join("");
+  });
+  document.getElementById("g-sec").innerHTML=HN.map(d=>`<button class="cbtn low" data-sc="${d.c}" onclick="pickSec('${d.c}','${d.rom}')">${d.c}<span class="rom">${d.rom}</span></button>`).join("");
+  S.final=FINALS.none[0];
+}
+/* ── Pick handlers ── */
+function pickCons(c,cls,rom){
+  document.querySelectorAll(".cbtn:not([data-sc]):not([data-cl])").forEach(b=>b.classList.remove("on"));
+  document.querySelector(`.cbtn[data-c="${c}"]`).classList.add("on");
+  S.cons={c,cls,rom};S.secCons=null;S.cluCons=null;
+  document.querySelectorAll(".cbtn[data-sc],.cbtn[data-cl]").forEach(b=>b.classList.remove("on"));
+  document.getElementById("haw-con").style.display=(c==="ห")?"block":"none";
+  const cs=CS[c];
+  if(cs&&cs.length){
+    document.getElementById("clu-con").style.display="block";
+    document.getElementById("g-clu").innerHTML=cs.map(s=>`<button class="cbtn teal" data-cl="${s}" onclick="pickClu('${s}')">${s}</button>`).join("");
+    document.getElementById("clu-note").textContent="選 "+cs.join(" ");
+  } else document.getElementById("clu-con").style.display="none";
+  renderResult();
+  if(ttsAuto)speak(c);
+}
+function pickSec(c,rom){
+  document.querySelectorAll(".cbtn[data-sc]").forEach(b=>b.classList.remove("on"));
+  document.querySelector(`.cbtn[data-sc="${c}"]`).classList.add("on");
+  S.secCons={c,rom};S.cluCons=null;renderResult();
+}
+function pickClu(c2){
+  document.querySelectorAll(".cbtn[data-cl]").forEach(b=>b.classList.remove("on"));
+  document.querySelector(`.cbtn[data-cl="${c2}"]`).classList.add("on");
+  S.cluCons=c2;S.secCons=null;
+  document.getElementById("haw-con").style.display="none";
+  renderResult();
+}
+function pickVowel(idx){
+  document.querySelectorAll(".vbtn").forEach(b=>b.classList.remove("on"));
+  document.querySelector(`.vbtn[data-i="${idx}"]`).classList.add("on");
+  S.vowel=VOWELS[idx];renderResult();
+}
+function pickFinal(type,idx){
+  document.querySelectorAll(".fbtn").forEach(b=>b.classList.remove("on"));
+  const f=FINALS[type][idx];
+  document.querySelector(`.fbtn[data-c="${f.c}"]`).classList.add("on");
+  S.final=f;renderResult();
+}
+function pickMark(i){
+  document.querySelectorAll(".mbtn").forEach(b=>b.classList.remove("on"));
+  document.querySelector(`.mbtn[data-mi="${i}"]`).classList.add("on");
+  S.markOverride=(i===0)?null:i;renderResult();
+}
+/* ── Build syllable ── */
+function buildSyl(){
+  if(!S.cons||!S.vowel)return null;
+  const useSec=S.cons.c==="ห"&&S.secCons,useClu=!!S.cluCons;
+  let C,cls,romBase;
+  if(useSec){C="ห"+S.secCons.c;cls="high";}
+  else if(useClu){C=S.cons.c+S.cluCons;cls=S.cons.cls;}
+  else{C=S.cons.c;cls=S.cons.cls;}
+  const V=S.vowel,F=S.final,Fc=(F&&F.c!=="—")?F.c:"",Ft=F?F.type:"none";
+  const am=S.markOverride,mc=am?MC[am]:"";
+  const th=V.render(C,Fc,mc);
+  if(useSec)romBase=V.rf(S.secCons.c,Fc);
+  else if(useClu){const k=S.cons.c+S.cluCons;romBase=(CR[k]||rC(S.cons.c)+rC(S.cluCons))+V.rom+rF(Fc);}
+  else romBase=V.rf(S.cons.c,Fc);
+  const tone=am?mToT(cls,am):cDef(cls,V.dur,Ft);
+  const rom=aT(romBase,tone);
+  return{th,rom,tone,cls,dur:V.dur,Ft,V,C,Fc,am,romBase,useSec,useClu};
+}
+/* ── Word bar ── */
+function updateWordBar(){
+  const inner=document.getElementById("wb-chips");
+  const hint=document.getElementById("wb-hint");
+  if(!inner||!hint)return; // null-safe guard
+  let curChip="";
+  if(S.cons&&!S.vowel){
+    const cc={mid:"var(--mid)",high:"var(--high)",low:"var(--low)"}[S.cons.cls]||"var(--mid)";
+    curChip=`<span class="chip cur partial" style="border-color:${cc};background:#fff;color:${cc}">${S.cons.c}…</span>`;
+  } else if(S.cons&&S.vowel){
+    const cur=buildSyl();
+    if(cur)curChip=`<span class="chip cur">${cur.th}</span>`;
+  }
+  const chips=syllables.map((s,i)=>`<span class="chip">${s.th}<button class="chip-x" onclick="removeSyl(${i})">×</button></span><span class="chip-sep">·</span>`).join("");
+  if(syllables.length===0&&!S.cons){inner.innerHTML="";hint.style.display="";}
+  else{hint.style.display="none";inner.innerHTML=chips+curChip;}
+}
+function removeSyl(i){syllables.splice(i,1);updateWordBar();if(syllables.length===0)renderResult();}
+/* ── Commit / nav ── */
+function commitSyl(){
+  const cur=buildSyl();
+  if(cur){
+    syllables.push({th:cur.th,rom:cur.rom,tone:cur.tone});
+    addHist(cur.th,cur.rom);
+  }
+  S={cons:null,vowel:null,final:FINALS.none[0],markOverride:null,secCons:null,cluCons:null};
+  document.querySelectorAll(".cbtn,.vbtn,.mbtn,.fbtn").forEach(b=>b.classList.remove("on"));
+  document.querySelector(".fbtn.none-btn").classList.add("on");
+  document.querySelector(".mbtn.none-m").classList.add("on");
+  document.getElementById("haw-con").style.display="none";
+  document.getElementById("clu-con").style.display="none";
+  updateWordBar();
+  renderResult();
+}
+function backspace(){
+  if(S.final&&S.final.c!=="—"){pickFinal("none",0);return;}
+  if(S.vowel){S.vowel=null;document.querySelectorAll(".vbtn").forEach(b=>b.classList.remove("on"));renderResult();updateWordBar();return;}
+  if(S.cons){S.cons=null;S.secCons=null;S.cluCons=null;document.querySelectorAll(".cbtn:not([data-sc]):not([data-cl])").forEach(b=>b.classList.remove("on"));document.getElementById("haw-con").style.display="none";document.getElementById("clu-con").style.display="none";renderResult();updateWordBar();return;}
+  if(syllables.length>0){syllables.pop();updateWordBar();renderResult();}
+}
+function clearAll(){
+  syllables=[];
+  S={cons:null,vowel:null,final:FINALS.none[0],markOverride:null,secCons:null,cluCons:null};
+  document.querySelectorAll(".cbtn,.vbtn,.mbtn,.fbtn").forEach(b=>b.classList.remove("on"));
+  document.querySelector(".fbtn.none-btn").classList.add("on");
+  document.querySelector(".mbtn.none-m").classList.add("on");
+  document.getElementById("haw-con").style.display="none";
+  document.getElementById("clu-con").style.display="none";
+  updateWordBar();renderResult();
+}
+function resetAll(){clearAll();history=[];favourites=[];renderHist();renderFav();}
+function playAll(){
+  const cur=buildSyl();
+  const all=cur?[...syllables,{th:cur.th}]:syllables;
+  const w=all.map(s=>s.th).join("");
+  if(w)speak(w);
+}
+/* ── Render result ── */
+function renderResult(){
+  updateWordBar();
+  const el=document.getElementById("result");
+  if(!el)return;
+  try{
+  // Show multi-word view when we have committed syllables and no current cons
+  if(syllables.length>0&&!S.cons&&!S.vowel){renderMulti();return;}
+  // Partial: consonant selected but no vowel yet
+  if(S.cons&&!S.vowel){
+    const cc={mid:"partial-mid",high:"partial-high",low:"partial-low"}[S.cons.cls]||"partial-mid";
+    const clsN={mid:"中子音 🔵",high:"高子音 🔴",low:"低子音 🟢"}[S.cons.cls];
+    const clsColor={mid:"#2471A3",high:"#C0392B",low:"#1E8449"}[S.cons.cls]||"#5B3A87";
+    const clsBg={mid:"#EAF3FB",high:"#FDECEA",low:"#EAF7EE"}[S.cons.cls]||"#F3EDFF";
+    el.innerHTML="";
+    const pv=document.createElement("div");
+    pv.style.cssText="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1em;text-align:center;min-height:80px";
+    const big=document.createElement("div");
+    big.style.cssText="font-family:'Noto Serif Thai',serif;font-size:clamp(52px,8vw,96px);font-weight:900;line-height:1;color:"+clsColor+";text-shadow:0 2px 8px rgba(0,0,0,.12)";
+    big.textContent=S.cons.c;
+    const hint=document.createElement("div");
+    hint.style.cssText="font-size:14px;color:#888;font-family:'Noto Sans TC',sans-serif;margin-top:8px;letter-spacing:.5px";
+    hint.textContent=clsN+"・"+( S.cons.rom||"ʔ")+" ← 現在選母音";
+    pv.appendChild(big);pv.appendChild(hint);
+    el.appendChild(pv);
+    return;
+  }
+  const cur=buildSyl();
+  if(!cur){
+    if(syllables.length>0){renderMulti();return;}
+    el.innerHTML=`<div class="empty"><div class="empty-txt">👆 按下子音開始拼字</div></div>`;
+    return;
+  }
+  const{th,rom,tone,cls,dur,Ft,V,C,Fc,am,romBase,useSec,useClu}=cur;
+  const clsLbl=useSec?`ห+${S.secCons.c}（高子音）`:useClu?`${S.cons.c}+${S.cluCons}（複合）`:{mid:"中子音 🔵",high:"高子音 🔴",low:"低子音 🟢"}[cls];
+  const durLbl=dur==="short"?"短":"長";
+  const fLbl=Fc?(Ft==="live"?"活尾":"死尾"):"無尾";
+  // Tone cells
+  const quizAll=quizMode;
+  const toneCells=[1,2,3,4,5].map(t=>{
+    const td=TD[t],mIdx=tToM(cls,t),isAct=t===tone;
+    const isHN=cls==="low"&&t===5;
+    let ach=false;
+    if(mIdx===null)ach=isHN;
+    else if(mIdx===0)ach=(cDef(cls,dur,Ft)===t);
+    else ach=true;
+    let sylT="—",romT="—",noteEl="";
+    if(ach){
+      if(isHN&&mIdx===null){const bc=useSec?S.secCons.c:(useClu?S.cons.c+S.cluCons:S.cons.c);sylT=V.render("ห"+bc,Fc,"");romT=aT(romBase,t);noteEl=`<div class="tc-na">ห 變身術</div>`;}
+      else{const un=(mIdx===0)||(cDef(cls,dur,Ft)===t);const mc=un?"":MC[mIdx];sylT=V.render(C,Fc,mc);romT=aT(romBase,t);}
+    }
+    const hidden=quizAll&&!isAct?"quiz-hidden":"";
+    return `<div class="tc ${td.cls}${isAct?" active":""}${am&&isAct?" manual":""}${!ach?" unavail":""} ${hidden}">
+      <div class="tc-syl">${ach?sylT:"—"}</div>
+      <div class="tc-mark">${ach?td.mark:"—"}</div>
+      <div class="tc-name">第${t}聲·${td.desc}</div>
+      ${showRom?`<div class="tc-rom">${ach?romT:"—"}</div>`:""}
+      ${noteEl}</div>`;
+  }).join("");
+  // Example words
+  let exHtml="";
+  if(showEx){
+    const exWords=EX[th]||[];
+    if(exWords.length){
+      exHtml=`<div class="ex-words">${exWords.map(w=>`<div class="ex-word" onclick="speak('${w[0].replace(/'/g,"\\'")}')"><span class="ex-th">${w[0]}</span><span class="ex-zh">${w[1]}</span></div>`).join("")}</div>`;
+    }
+  }
+  const safeSyl=th.replace(/'/g,"\\'");
+  const favIcon=favourites.some(f=>f.th===th)?"⭐":"☆";
+  el.innerHTML=`
+    <div class="parts-row">
+      <div class="rp ${useClu?"cl":"c"}"><span class="rp-th">${C}</span><span class="rp-lb">${clsLbl}</span></div>
+      <span class="op">+</span>
+      <div class="rp v"><span class="rp-th">${vDisp(V)}</span><span class="rp-lb">${durLbl}·${V.rom}</span></div>
+      ${Fc?`<span class="op">+</span><div class="rp f"><span class="rp-th">${Fc}</span><span class="rp-lb">${fLbl}·${rF(Fc)}</span></div>`:""}
+      ${am?`<span class="op">+</span><div class="rp m"><span class="rp-th">อ${MC[am]}</span><span class="rp-lb">手動調</span></div>`:""}
+      <span class="eq">=</span>
+    </div>
+    <div class="syl-big">${th}</div>
+    ${showRom?`<div class="rom-line">${rom}</div>`:""}
+    <div id="syl-trans" style="text-align:center;min-height:.9em;margin-bottom:.25em"></div>
+    <div style="text-align:center;margin-bottom:.3em;display:flex;gap:5px;justify-content:center;flex-wrap:wrap">
+      <button class="tts-btn" onclick="speak('${safeSyl}')">🔊 播放</button>
+      <button class="tts-btn" onclick="toggleFav('${safeSyl}','${rom.replace(/'/g,"\\'")}',this)" id="fav-btn">${favIcon} 收藏</button>
+      ${syllables.length>0||S.cons?`<button class="tts-btn" onclick="commitSyl()">＋ 下一個</button>`:""}
+    </div>
+    ${exHtml}
+    <div class="tone-table">${toneCells}</div>
+    <div class="sop">${buildSOP(cls,dur,Ft,Fc,tone,am)}</div>`;
+  fetchTrans(th);
+  if(ttsAuto)speak(th);
+  addHist(th,rom);
+  }catch(err){
+    console.error("renderResult error:",err);
+    el.innerHTML=`<div style="padding:1em;color:red;font-size:12px">Error: ${err.message}</div>`;
+  }
+}
+function renderMulti(){
+  const el=document.getElementById("result");
+  const n=syllables.length;
+  const thSz=n<=2?72:n<=4?52:n<=6?40:n<=8?32:22;
+  const rSz=n<=4?14:n<=8?11:9;
+  const items=syllables.map((s,i)=>`<div class="syl-item" onclick="speak('${s.th.replace(/'/g,"\\'")}')">
+    <span class="syl-th" style="font-size:${thSz}px">${s.th}</span>
+    ${showRom?`<span class="syl-rom" style="font-size:${rSz}px">${s.rom}</span>`:""}
+  </div>`).join(`<span style="font-size:${thSz*.55}px;color:var(--ru);align-self:center;padding:0 .1em">·</span>`);
+  const fw=syllables.map(s=>s.th).join("");
+  el.innerHTML=`<div class="multi-result">${items}</div>
+    <div style="text-align:center;margin-top:.35em">
+      <button class="tts-btn" onclick="speak('${fw.replace(/'/g,"\\'")}')">🔊 播放全部</button>
+    </div>`;
+}
+async function fetchTrans(syl){
+  try{
+    const r=await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=th&tl=zh-TW&dt=t&q=${encodeURIComponent(syl)}`);
+    const d=await r.json();const t=d[0].map(s=>s[0]).join("").trim();
+    const el=document.getElementById("syl-trans");
+    if(el&&t&&t!==syl)el.innerHTML=`<span class="trans-chip">🇹🇼 ${t}</span>`;
+  }catch{}
+}
+function buildSOP(cls,dur,ft,Fc,tone,am){
+  const td=TD[tone],cN={mid:"中子音 🔵",high:"高子音 🔴",low:"低子音 🟢"}[cls],dN=dur==="short"?"短母音":"長母音";
+  const dead=ft==="dead",live=ft==="live";
+  let s1,s2,s3;
+  if(am){const mn=TM.find(m=>m.idx===am)||{};s1=`<strong>有符號（${mn.char} ${mn.lbl}）</strong>直接判斷`;s2="—";s3=`<strong>${cN}+${mn.lbl}→第${tone}聲（${td.name}）</strong>`;}
+  else{s1=`<strong>無符號</strong>→Step 2`;
+    if(dead){s2=`<strong>死尾 ${Fc}（${rF(Fc)}）</strong>→直接判斷`;s3=`<strong>${cN}+死尾${dur==="short"?"+短":""}→第${tone}聲（${td.name}）</strong>`;}
+    else if(live){s2=`<strong>活尾 ${Fc}（${rF(Fc)}）</strong>→Step 3`;s3=`<strong>${cN}+活尾→第${tone}聲（${td.name}）</strong>`;}
+    else{s2=`<strong>無尾音</strong>→Step 3`;s3=`<strong>${cN}+無尾+${dN}→第${tone}聲（${td.name}）</strong>`;}}
+  return s2==="—"
+    ?`<div class="sop-step"><div class="sop-n">1</div><div>${s1}</div></div><div class="sop-step"><div class="sop-n">3</div><div>${s3}</div></div>`
+    :`<div class="sop-step"><div class="sop-n">1</div><div>${s1}</div></div><div class="sop-step"><div class="sop-n">2</div><div>${s2}</div></div><div class="sop-step"><div class="sop-n">3</div><div>${s3}</div></div>`;
+}
+/* ── History ── */
+function addHist(th,rom){
+  if(history.length>0&&history[0].th===th)return;
+  history.unshift({th,rom,time:new Date().toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})});
+  if(history.length>60)history.pop();
+  renderHist();
+}
+function renderHist(){
+  const el=document.getElementById("hist-scroll");
+  if(!history.length){el.innerHTML=`<div class="sp-empty">還沒有練習紀錄</div>`;return;}
+  const fSet=new Set(favourites.map(f=>f.th));
+  el.innerHTML=history.map((h,i)=>`<div class="sp-item">
+    <span class="sp-th" onclick="speak('${h.th.replace(/'/g,"\\'")}');">${h.th}</span>
+    ${showRom?`<span class="sp-rom">${h.rom}</span>`:""}
+    <span class="sp-star${fSet.has(h.th)?" on":""}" onclick="toggleFavStr('${h.th.replace(/'/g,"\\'")}','${h.rom.replace(/'/g,"\\'")}',this)" title="收藏">☆</span>
+    <span class="sp-time">${h.time}</span>
+  </div>`).join("");
+}
+function clearHistory(){history=[];renderHist();}
+/* ── Favourites ── */
+function toggleFav(th,rom,btn){
+  const idx=favourites.findIndex(f=>f.th===th);
+  if(idx>=0){favourites.splice(idx,1);if(btn)btn.textContent="☆ 收藏";}
+  else{favourites.push({th,rom,time:new Date().toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})});if(btn)btn.textContent="⭐ 收藏";}
+  renderFav();renderHist();
+}
+function toggleFavStr(th,rom,star){
+  const idx=favourites.findIndex(f=>f.th===th);
+  if(idx>=0){favourites.splice(idx,1);star.textContent="☆";star.classList.remove("on");}
+  else{favourites.push({th,rom,time:new Date().toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})});star.textContent="⭐";star.classList.add("on");}
+  renderFav();
+}
+function renderFav(){
+  const el=document.getElementById("fav-scroll");
+  if(!favourites.length){el.innerHTML=`<div class="sp-empty">點擊 ☆ 把單字加入收藏</div>`;return;}
+  el.innerHTML=favourites.map((f,i)=>`<div class="sp-item">
+    <span class="sp-th" onclick="speak('${f.th.replace(/'/g,"\\'")}');">${f.th}</span>
+    ${showRom?`<span class="sp-rom">${f.rom}</span>`:""}
+    <span class="sp-star on" onclick="toggleFav('${f.th.replace(/'/g,"\\'")}','${f.rom.replace(/'/g,"\\'")}',null)" title="移除">⭐</span>
+    <span class="sp-time">${f.time}</span>
+  </div>`).join("");
+}
+function clearFav(){favourites=[];renderFav();}
+function exportVocab(type){
+  const list=type==="fav"?favourites:history;
+  const txt=list.map(h=>`${h.th}\t${h.rom}`).join("\n");
+  const a=document.createElement("a");
+  a.href="data:text/plain;charset=utf-8,"+encodeURIComponent("泰文\t音標\n"+txt);
+  a.download=type==="fav"?"我的單字本.txt":"練習紀錄.txt";
+  a.click();
+}
+/* ── Quiz mode ── */
+function toggleQuiz(){
+  quizMode=!quizMode;
+  const btn=document.getElementById("quiz-toggle");
+  btn.textContent=quizMode?"🎯 關閉練習":"🎯 聲調練習";
+  btn.style.background=quizMode?"var(--pur)":"";
+  btn.style.color=quizMode?"#fff":"";
+  btn.style.borderColor=quizMode?"var(--pur)":"";
+  renderResult();
+}
+/* ── Random quiz ── */
+let randScore={ok:0,fail:0},randCur=null;
+function toggleRand(){
+  randMode=!randMode;
+  document.getElementById("rand-panel").style.display=randMode?"block":"none";
+  document.getElementById("rand-toggle").textContent=randMode?"🎲 結束出題":"🎲 隨機出題";
+  if(randMode)nextRand();
+}
+function nextRand(){
+  // Pick random cons + vowel
+  const allCons=[...CONS.mid,...CONS.high,...CONS.low];
+  const cons=allCons[Math.floor(Math.random()*allCons.length)];
+  const vPool=VOWELS.filter(v=>v.g==="short"||v.g==="long");
+  const vow=vPool[Math.floor(Math.random()*vPool.length)];
+  const C=cons.c,cls=cons.cls;
+  const th=vow.render(C,"","");
+  const tone=cDef(cls,vow.dur,"none");
+  randCur={th,tone,cls,dur:vow.dur};
+  document.getElementById("rand-desc").textContent=`${cls==="mid"?"中":"cls"==="high"?"高":"低"}子音 + ${vow.dur==="short"?"短":"長"}母音`;
+  document.getElementById("rand-quiz").innerHTML=`
+    <div class="rand-syl" onclick="speak('${th.replace(/'/g,"\\'")}');">${th}</div>
+    <div class="rand-tone-btns">${[1,2,3,4,5].map(t=>`<button class="rtb" onclick="answerRand(${t},this)">第${t}聲</button>`).join("")}</div>`;
+  speak(th);
+}
+function answerRand(t,btn){
+  if(!randCur)return;
+  const correct=t===randCur.tone;
+  btn.classList.add(correct?"correct":"wrong");
+  if(correct)randScore.ok++;else randScore.fail++;
+  document.getElementById("rand-score").textContent=`✅${randScore.ok} ❌${randScore.fail}`;
+  document.querySelectorAll(".rtb").forEach(b=>b.disabled=true);
+  // Highlight correct answer
+  document.querySelectorAll(".rtb")[randCur.tone-1].classList.add("correct");
+  setTimeout(()=>nextRand(),1200);
+}
+/* ── Big mode ── */
+function toggleBig(){
+  bigMode=!bigMode;
+  document.documentElement.style.fontSize=bigMode?"22px":"16px";
+  document.getElementById("split")||document.querySelector(".split");
+}
+/* ── Keyboard ── */
+document.addEventListener("keydown",e=>{
+  const ae=document.activeElement;
+  if(ae&&(ae.isContentEditable||ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"))return;
+  if(e.key===" "||e.key==="Enter"){e.preventDefault();commitSyl();}
+  else if(e.key==="Backspace"){e.preventDefault();backspace();}
+  else if(e.key==="Escape"||e.key==="Delete"){e.preventDefault();clearAll();}
+  // 1-5 for quiz answer
+  else if(randMode&&["1","2","3","4","5"].includes(e.key)){
+    const btn=document.querySelectorAll(".rtb")[parseInt(e.key)-1];
+    if(btn&&!btn.disabled)answerRand(parseInt(e.key),btn);
+  }
+  // Consonant shortcuts: not mapped (too many) but vowel marks:
+  // + = commit, could add more
+});
+/* ── Mobile tabs ── */
+function mobTab(idx,btn){
+  document.querySelectorAll(".mob-tab").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  document.querySelectorAll(".sel-col").forEach((col,i)=>col.classList.toggle("open",i===idx));
+}
+/* ── Init ── */
+renderSels();
+renderResult();
+</script>
+</body>
+</html>
