@@ -1,7 +1,6 @@
 # Netlify configuration for thai-tool
 
 [build]
-  command = "echo 'Static site - no build required'"
   publish = "."
 
 # Edge Functions routing
